@@ -287,13 +287,13 @@ module Report = struct
         in
         begin match result with
           | V.V_proved {proof=p;_} ->
-            D.block [ D.bold @@ D.s "Proved"; mkproof p]
+            D.v_block [ D.bold @@ D.s "Proved"; mkproof p]
           | V.V_proved_upto {upto;_} ->
             D.bold @@ D.s_f "Proved up to %a" Event.print_upto upto;
           | V.V_refuted {proof=p; model; _} ->
-            D.block [ D.bold @@ D.s "Refuted"; mk_model model; mkproof p ]
+            D.v_block [ D.bold @@ D.s "Refuted"; mk_model model; mkproof p ]
           | V.V_unknown {proof=p;_} ->
-            D.block [D.bold @@ D.s "Unknown"; mkproof p]
+            D.v_block [D.bold @@ D.s "Unknown"; mkproof p]
         end
     in
     D.record [
