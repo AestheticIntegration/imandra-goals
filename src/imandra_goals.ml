@@ -190,9 +190,9 @@ module Report = struct
     let to_doc self : D.t =
       let {proved; total; time} = self in
       D.record [
-        "proved", D.int proved;
-        "total", D.int total;
-        "time", D.s_f "%.2fs" time;
+        "Proved", D.int proved;
+        "Total", D.int total;
+        "Time", D.s_f "%.2fs" time;
       ]
 
   end
@@ -216,10 +216,10 @@ module Report = struct
     let doc_of_digest (d : t) : D.t =
       let p = percent_of_progress d.progress in
       D.record [
-        "section name", D.s d.section_name;
-        "progress", D.s_f "%d %%" p;
-        "elapsed time", D.s_f "%.2fs" d.elapsed_time;
-        "goal names", D.fold ~summary:"goal names" ~folded_by_default:true @@
+        "Section name", D.s d.section_name;
+        "Progress", D.s_f "%d %%" p;
+        "Elapsed time", D.s_f "%.2fs" d.elapsed_time;
+        "Goal names", D.fold ~summary:"goal names" ~folded_by_default:true @@
         D.list_of D.p d.goal_names;
       ]
 
@@ -296,10 +296,10 @@ module Report = struct
         end
     in
     D.record [
-      "status", (status_marker g);
+      "Status", (status_marker g);
       "VG", D.bold (D.p g.name);
-      "description", D.p g.desc;
-      "result", sd;
+      "Description", D.p g.desc;
+      "Result", sd;
     ]
 
   let progress_of_oc goals =
