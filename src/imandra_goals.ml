@@ -347,8 +347,7 @@ module Report = struct
           goal_names=List.map (fun (_,g) -> g.name) goals;
         } in
 
-      D.block [
-        D.section section;
+      D.section section [
         doc_of_progress progress;
         Digest.doc_of_digest digest;
         D.list_of (fun (_,x) -> item ~compressed x) goals
