@@ -368,7 +368,7 @@ module Report = struct
     let stats = Digest.get_stats digests in
     D.list (List.map snd docs), stats
 
-  let doc_to_html (doc:D.t) : string =
+  let doc_to_html ?custom_css (doc:D.t) : string =
     let module H = Tyxml.Html in
     let module DH = Imandra_document_tyxml in
 
@@ -382,16 +382,20 @@ module Report = struct
           if col>0 then d else (H.a_class ["col-3"] :> Html_types.td_attrib H.attrib) :: d);
     } in
 
-    DH.Mapper.run_doc ~title:"Imandra report" mapper doc
+    let headers = match custom_css with
+      | None -> []
+      | Some c -> [H.style [H.txt c]]
+    in
+    DH.Mapper.run_doc ~headers ~title:"Imandra report" mapper doc
     |> DH.string_of_html_doc
 
-  let top ~compressed ~filename =
+  let top ?custom_css ~compressed ~filename () =
     try
       let l = State.list_of_goals () in
       let gs, stats = by_section ~compressed l in
       let progress = progress_of_oc l in
       let doc = in_header ~status:progress ~content:gs ~stats in
-      let html = doc_to_html doc in
+      let html = doc_to_html ?custom_css doc in
       write_to_file (filename ^ ".html") html;
       (* TODO: put on top of file?
       let time = Unix.gettimeofday () -. State.(!state.t_begin) in
@@ -404,6 +408,8 @@ module Report = struct
 
 end
 
-let report ?(compressed=false) filename =
-  Report.top ~compressed ~filename
+let imandra_custom_css: string = Imandra_goals_css.css
+
+let report ?(custom_css=imandra_custom_css) ?(compressed=false) filename =
+  Report.top ~custom_css ~compressed ~filename ()
 

@@ -8,3 +8,15 @@
  (flags
   (:standard -w +a-4-29-42-44-48-50-58-32-60@8 -safe-string
              -open Imandra_interactive -open Imandra_surface -open Imandra_util)))
+
+(rule
+  (targets imandra_goals_css.ml)
+  (deps imandra.css)
+  (action
+    (with-stdout-to %{targets}
+      (progn
+        (echo "let css = {mycss|")
+        (run cat %{deps})
+        (echo "|mycss}")
+        ))))
+
