@@ -245,11 +245,9 @@ module Report = struct
     | None -> D.empty
 
   let in_header ~section_name ~status ~content ~stats : D.t =
-    D.block [
-      D.section "Imandra Verification Report";
+    D.section "Imandra Verification Report" [
       Stat.to_doc stats;
-      D.block [
-        D.section_f "Section: %s" section_name;
+      D.section_f "Section: %s" section_name [
         doc_of_progress status;
         content;
       ];
