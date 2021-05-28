@@ -54,4 +54,4 @@ val all : unit -> (id * goal) list
 
 (** {2 Report} *)
 
-val report : ?section_name:string -> ?compressed:bool -> string -> unit
+val report : ?compressed:bool -> string -> unit

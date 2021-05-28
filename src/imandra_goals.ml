@@ -244,13 +244,11 @@ module Report = struct
     | Some s -> D.s_f "- Build commit ID %s" (String.trim s)
     | None -> D.empty
 
-  let in_header ~section_name ~status ~content ~stats : D.t =
+  let in_header ~status ~content ~stats : D.t =
     D.section "Imandra Verification Report" [
       Stat.to_doc stats;
-      D.section_f "Section: %s" section_name [
-        doc_of_progress status;
-        content;
-      ];
+      doc_of_progress status;
+      content;
       D.block [
         D.s_f "Verified with Imandra v%s" Version.version;
         build_id ();
@@ -387,12 +385,12 @@ module Report = struct
     DH.Mapper.run_doc ~title:"Imandra report" mapper doc
     |> DH.string_of_html_doc
 
-  let top ?(section_name=Section.to_string ()) ~compressed ~filename =
+  let top ~compressed ~filename =
     try
       let l = State.list_of_goals () in
       let gs, stats = by_section ~compressed l in
       let progress = progress_of_oc l in
-      let doc = in_header ~section_name ~status:progress ~content:gs ~stats in
+      let doc = in_header ~status:progress ~content:gs ~stats in
       let html = doc_to_html doc in
       write_to_file (filename ^ ".html") html;
       (* TODO: put on top of file?
@@ -406,6 +404,6 @@ module Report = struct
 
 end
 
-let report ?section_name ?(compressed=false) filename =
-  Report.top ?section_name ~compressed ~filename
+let report ?(compressed=false) filename =
+  Report.top ~compressed ~filename
 
