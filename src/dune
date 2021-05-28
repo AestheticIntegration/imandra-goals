@@ -10,13 +10,15 @@
              -open Imandra_interactive -open Imandra_surface -open Imandra_util)))
 
 (rule
-  (targets imandra_goals_css.ml)
-  (deps imandra.css)
+  (targets imandra_goals_consts_.ml)
+  (deps (:css imandra.css) (:logo imandra-logo.svg))
   (action
     (with-stdout-to %{targets}
       (progn
         (echo "let css = {mycss|")
-        (run cat %{deps})
+        (run cat %{css})
         (echo "|mycss}")
+        (echo "let logo = {mysvg|")
+        (run cat %{logo})
+        (echo "|mysvg}")
         ))))
-

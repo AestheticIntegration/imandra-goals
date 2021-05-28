@@ -168,6 +168,9 @@ let write_to_file filename s =
   with e ->
     raise (Write_to_file (filename, e))
 
+let imandra_custom_css: string = Imandra_goals_consts_.css
+let imandra_custom_logo: string = Imandra_goals_consts_.logo
+
 module Report = struct
   type progress = Complete of int | Partial of int * int
 
@@ -245,7 +248,7 @@ module Report = struct
     | None -> D.empty
 
   let in_header ~status ~content ~stats : D.t =
-    D.section "Imandra Verification Report" [
+    let d2 = D.section "Imandra Verification Report" [
       Stat.to_doc stats;
       doc_of_progress status;
       content;
@@ -253,7 +256,9 @@ module Report = struct
         D.s_f "Verified with Imandra v%s" Version.version;
         build_id ();
       ];
-    ]
+    ] in
+    let logo = D.html (D.Unsafe_.html_of_string imandra_custom_logo) in
+    D.block [logo; d2]
 
   let status_marker g : D.t =
     let open Verify in
@@ -407,8 +412,6 @@ module Report = struct
         filename (Printexc.to_string e)
 
 end
-
-let imandra_custom_css: string = Imandra_goals_css.css
 
 let report ?(custom_css=imandra_custom_css) ?(compressed=false) filename =
   Report.top ~custom_css ~compressed ~filename ()
