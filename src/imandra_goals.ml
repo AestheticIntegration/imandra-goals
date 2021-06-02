@@ -168,6 +168,9 @@ let write_to_file filename s =
   with e ->
     raise (Write_to_file (filename, e))
 
+let imandra_custom_css: string = Imandra_goals_consts_.css
+let imandra_custom_logo: string = Imandra_goals_consts_.logo
+
 module Report = struct
   type progress = Complete of int | Partial of int * int
 
@@ -190,9 +193,9 @@ module Report = struct
     let to_doc self : D.t =
       let {proved; total; time} = self in
       D.record [
-        "proved", D.int proved;
-        "total", D.int total;
-        "time", D.s_f "%.2fs" time;
+        "Proved", D.int proved;
+        "Total", D.int total;
+        "Time", D.s_f "%.2fs" time;
       ]
 
   end
@@ -216,10 +219,10 @@ module Report = struct
     let doc_of_digest (d : t) : D.t =
       let p = percent_of_progress d.progress in
       D.record [
-        "section name", D.s d.section_name;
-        "progress", D.s_f "%d %%" p;
-        "elapsed time", D.s_f "%.2fs" d.elapsed_time;
-        "goal names", D.fold ~summary:"goal names" ~folded_by_default:true @@
+        "Section name", D.s d.section_name;
+        "Progress", D.s_f "%d %%" p;
+        "Elapsed time", D.s_f "%.2fs" d.elapsed_time;
+        "Goal names", D.fold ~summary:"goal names" ~folded_by_default:true @@
         D.list_of D.p d.goal_names;
       ]
 
@@ -244,20 +247,18 @@ module Report = struct
     | Some s -> D.s_f "- Build commit ID %s" (String.trim s)
     | None -> D.empty
 
-  let in_header ~section_name ~status ~content ~stats : D.t =
-    D.block [
-      D.section "Imandra Verification Report";
+  let in_header ~status ~content ~stats : D.t =
+    let d2 = D.section "Imandra Verification Report" [
       Stat.to_doc stats;
-      D.block [
-        D.section_f "Section: %s" section_name;
-        doc_of_progress status;
-        content;
-      ];
+      doc_of_progress status;
+      content;
       D.block [
         D.s_f "Verified with Imandra v%s" Version.version;
         build_id ();
       ];
-    ]
+    ] in
+    let logo = D.html (D.Unsafe_.html_of_string imandra_custom_logo) in
+    D.block [logo; d2]
 
   let status_marker g : D.t =
     let open Verify in
@@ -286,20 +287,20 @@ module Report = struct
         in
         begin match result with
           | V.V_proved {proof=p;_} ->
-            D.block [ D.bold @@ D.s "Proved"; mkproof p]
+            D.v_block [ D.bold @@ D.s "Proved"; mkproof p]
           | V.V_proved_upto {upto;_} ->
             D.bold @@ D.s_f "Proved up to %a" Event.print_upto upto;
           | V.V_refuted {proof=p; model; _} ->
-            D.block [ D.bold @@ D.s "Refuted"; mk_model model; mkproof p ]
+            D.v_block [ D.bold @@ D.s "Refuted"; mk_model model; mkproof p ]
           | V.V_unknown {proof=p;_} ->
-            D.block [D.bold @@ D.s "Unknown"; mkproof p]
+            D.v_block [D.bold @@ D.s "Unknown"; mkproof p]
         end
     in
     D.record [
-      "status", (status_marker g);
+      "Status", (status_marker g);
       "VG", D.bold (D.p g.name);
-      "description", D.p g.desc;
-      "result", sd;
+      "Description", D.p g.desc;
+      "Result", sd;
     ]
 
   let progress_of_oc goals =
@@ -349,8 +350,7 @@ module Report = struct
           goal_names=List.map (fun (_,g) -> g.name) goals;
         } in
 
-      D.block [
-        D.section section;
+      D.section section [
         doc_of_progress progress;
         Digest.doc_of_digest digest;
         D.list_of (fun (_,x) -> item ~compressed x) goals
@@ -373,7 +373,7 @@ module Report = struct
     let stats = Digest.get_stats digests in
     D.list (List.map snd docs), stats
 
-  let doc_to_html (doc:D.t) : string =
+  let doc_to_html ?custom_css (doc:D.t) : string =
     let module H = Tyxml.Html in
     let module DH = Imandra_document_tyxml in
 
@@ -387,16 +387,20 @@ module Report = struct
           if col>0 then d else (H.a_class ["col-3"] :> Html_types.td_attrib H.attrib) :: d);
     } in
 
-    DH.Mapper.run_doc ~title:"Imandra report" mapper doc
+    let headers = match custom_css with
+      | None -> []
+      | Some c -> [H.style [H.txt c]]
+    in
+    DH.Mapper.run_doc ~headers ~title:"Imandra report" mapper doc
     |> DH.string_of_html_doc
 
-  let top ?(section_name=Section.to_string ()) ~compressed ~filename =
+  let top ?custom_css ~compressed ~filename () =
     try
       let l = State.list_of_goals () in
       let gs, stats = by_section ~compressed l in
       let progress = progress_of_oc l in
-      let doc = in_header ~section_name ~status:progress ~content:gs ~stats in
-      let html = doc_to_html doc in
+      let doc = in_header ~status:progress ~content:gs ~stats in
+      let html = doc_to_html ?custom_css doc in
       write_to_file (filename ^ ".html") html;
       (* TODO: put on top of file?
       let time = Unix.gettimeofday () -. State.(!state.t_begin) in
@@ -409,6 +413,6 @@ module Report = struct
 
 end
 
-let report ?section_name ?(compressed=false) filename =
-  Report.top ?section_name ~compressed ~filename
+let report ?(custom_css=imandra_custom_css) ?(compressed=false) filename =
+  Report.top ~custom_css ~compressed ~filename ()
 

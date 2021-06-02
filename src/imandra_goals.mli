@@ -54,4 +54,10 @@ val all : unit -> (id * goal) list
 
 (** {2 Report} *)
 
-val report : ?section_name:string -> ?compressed:bool -> string -> unit
+(** Builtin custom CSS for Imandra *)
+val imandra_custom_css : string
+
+(** Write report to given filename *)
+val report :
+  ?custom_css:string ->
+  ?compressed:bool -> string -> unit
