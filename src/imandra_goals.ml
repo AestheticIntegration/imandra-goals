@@ -12,7 +12,8 @@ type t = {
   status   : status;
   expected : expected;
   idx      : int;
-  hints    : Imandra_surface.Uid.t Imandra_surface.Hints.t option
+  hints    : Imandra_surface.Uid.t Imandra_surface.Hints.t option;
+  upto     : Imandra_syntax.Logic_ast.upto option
 }
 
 and status =
@@ -102,7 +103,7 @@ module Section = struct
 
 end
 
-let init ?section ?owner ?(expected=Unknown) ?hints ~desc ~name () : unit =
+let init ?section ?owner ?(expected=Unknown) ?hints ?upto ~desc ~name () : unit =
   let g = {
     name;
     section = (match section with None -> !State.state.State.section | x -> x);
@@ -111,7 +112,7 @@ let init ?section ?owner ?(expected=Unknown) ?hints ~desc ~name () : unit =
     status = Open { assigned_to = owner };
     expected;
     idx = State.(!state.max_idx);
-    hints;
+    hints; upto
   } in
   State.(install g);
   State.(Set.focus (Some g))
@@ -132,7 +133,7 @@ let close_goal ?hints g =
     | Some _ -> hints
   in
   try
-    let r = Verify.top ?hints g.name in
+    let r = Verify.top ?hints ?upto:g.upto g.name in
     let duration = Unix.gettimeofday() -. timestamp in
     let status = Closed { timestamp; duration; result=r; } in
     let g = { g with status  } in

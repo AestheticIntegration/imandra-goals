@@ -9,7 +9,8 @@ type t = {
   status   : status;
   expected : expected;
   idx      : int;
-  hints    : Imandra_surface.Uid.t Imandra_surface.Hints.t option
+  hints    : Imandra_surface.Uid.t Imandra_surface.Hints.t option;
+  upto     : Imandra_syntax.Logic_ast.upto option
 }
 
 and status =
@@ -35,6 +36,7 @@ val init :
   ?owner:owner ->
   ?expected:expected ->
   ?hints:Imandra_surface.Uid.t Imandra_surface.Hints.t ->
+  ?upto:Imandra_syntax.Logic_ast.upto ->
   desc:string -> name:string ->
   unit -> unit
 
