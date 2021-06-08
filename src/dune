@@ -2,7 +2,7 @@
  (name imandra_goals)
  (public_name imandra-goals)
  (libraries containers imandra-base.interactive tyxml tyxml.functor
-            imandra-document.tyxml imandra-document
+            imandra-document.tyxml imandra-document imandra-syntax
             imandra-surface imandra-util)
  (modes byte)
  (flags
