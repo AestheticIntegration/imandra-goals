@@ -138,8 +138,8 @@ let close_goal ?hints g =
     let status = Closed { timestamp; duration; result=r; } in
     let g = { g with status  } in
     finalise g
-  with _ ->
-    let s = sprintf "Verification error: %s undefined?" g.name in
+  with e ->
+    let s = sprintf "Verification error: (%s) is %s undefined?" (Printexc.to_string e) g.name in
     let g = { g with status = Error s } in
     Printf.printf "%s\n%!" s;
     finalise g
