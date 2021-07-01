@@ -290,7 +290,7 @@ module Report = struct
           | V.V_proved {proof=p;_} ->
             D.v_block [ D.bold @@ D.s "Proved"; mkproof p]
           | V.V_proved_upto {upto;_} ->
-            D.bold @@ D.s_f "Proved up to %a" Event.print_upto upto;
+            D.bold @@ D.s_f "Proved up to %a" Event.pp_upto upto;
           | V.V_refuted {proof=p; model; _} ->
             D.v_block [ D.bold @@ D.s "Refuted"; mk_model model; mkproof p ]
           | V.V_unknown {proof=p;_} ->
