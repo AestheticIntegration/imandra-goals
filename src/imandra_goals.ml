@@ -149,7 +149,7 @@ let close ?hints ?name () =
   | None   ->
     begin match focus () with
       | Some g -> close_goal ?hints g |> ignore
-      | _ -> Error.unsupportedf "No goal under focus"
+      | _ -> Error.unsupportedf ~loc:Iloc.none"No goal under focus"
     end
   | Some g -> close_goal ?hints g |> ignore
 
@@ -409,7 +409,8 @@ module Report = struct
          *)
       printf "Report written to %s.\n" filename
     with e ->
-      Error.unsupportedf "Error writing report file (%s).\nException: %s"
+      Error.unsupportedf ~loc:Iloc.none
+        "Error writing report file (%s).\nException: %s"
         filename (Printexc.to_string e)
 
 end
