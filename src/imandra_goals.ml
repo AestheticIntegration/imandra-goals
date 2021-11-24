@@ -70,7 +70,7 @@ module State = struct
 
   let list_of_goals () =
     let cmp (_, g) (_, g') = Stdlib.compare g.idx g'.idx in
-    let goals = Util.list_of_hashtbl !state.goals in
+    let goals = CCHashtbl.to_list !state.goals in
     List.fast_sort cmp goals
 
   let clear () =
