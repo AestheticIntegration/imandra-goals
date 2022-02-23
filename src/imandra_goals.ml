@@ -139,7 +139,8 @@ let close_goal ?hints g =
     let g = { g with status  } in
     finalise g
   with e ->
-    let s = sprintf "Verification error: (%s) is %s undefined?" (Printexc.to_string e) g.name in
+    let s = CCFormat.sprintf "Verification error: (%a) is %s undefined?"
+        (Imandra_syntax.Util_io.pp_exn ?input:None) e g.name in
     let g = { g with status = Error s } in
     Printf.printf "%s\n%!" s;
     finalise g
