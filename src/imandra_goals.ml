@@ -10,17 +10,22 @@ type t = {
   owner: owner option;
   status: status;
   expected: expected;
+  mode: mode;
   idx: int;
   hints: Imandra_surface.Uid.t Imandra_surface.Hints.t option;
   upto: Imandra_syntax.Logic_ast.upto option;
 }
+
+and mode =
+  | For_all
+  | Exists
 
 and status =
   | Open of { assigned_to: owner option }
   | Closed of {
       timestamp: float;
       duration: float;
-      result: Verify.t;
+      result: [ `Verify of Verify.t | `Instance of Instance.t ];
     }
   | Error of string
 
@@ -108,8 +113,8 @@ module Section = struct
     | Some s -> s
 end
 
-let init ?section ?owner ?(expected = Unknown) ?hints ?upto ~desc ~name () :
-    unit =
+let init ?section ?owner ?(expected = Unknown) ?(mode = For_all) ?hints ?upto
+    ~desc ~name () : unit =
   let g =
     {
       name;
@@ -121,6 +126,7 @@ let init ?section ?owner ?(expected = Unknown) ?hints ?upto ~desc ~name () :
       owner;
       status = Open { assigned_to = owner };
       expected;
+      mode;
       idx = State.(!state.max_idx);
       hints;
       upto;
@@ -144,7 +150,11 @@ let close_goal ?hints g =
     | Some _ -> hints
   in
   try
-    let r = Verify.top ?hints ?upto:g.upto g.name in
+    let r =
+      match g.mode with
+      | For_all -> `Verify (Verify.top ?hints ?upto:g.upto g.name)
+      | Exists -> `Instance (Instance.top ?hints ?upto:g.upto g.name)
+    in
     let duration = Unix.gettimeofday () -. timestamp in
     let status = Closed { timestamp; duration; result = r } in
     let g = { g with status } in
@@ -294,12 +304,17 @@ module Report = struct
 
   let status_marker g : D.t =
     let open Verify in
+    let open Instance in
     match g.status, g.expected with
-    | Closed { result = V_refuted _; _ }, True
-    | Closed { result = V_proved _; _ }, False ->
+    | Closed { result = `Verify (V_refuted _); _ }, True
+    | Closed { result = `Instance (I_unsat _); _ }, True
+    | Closed { result = `Verify (V_proved _); _ }, False
+    | Closed { result = `Instance (I_sat _); _ }, False ->
       bad_red
-    | Closed { result = V_proved _; _ }, True
-    | Closed { result = V_refuted _; _ }, False ->
+    | Closed { result = `Verify (V_proved _); _ }, True
+    | Closed { result = `Instance (I_sat _); _ }, True
+    | Closed { result = `Verify (V_refuted _); _ }, False
+    | Closed { result = `Instance (I_unsat _); _ }, False ->
       ok_green
     | Error _, _ -> D.p ~a:[ D.A.red; D.A.cls "text-danger" ] "ERROR"
     | _ -> D.p ~a:[ D.A.yellow; D.A.cls "text-warning" ] "?"
@@ -307,6 +322,7 @@ module Report = struct
   let item ?(compressed = false) (g : t) : D.t =
     Debug.tracef (fun k -> k "Working on %s\n%!" g.name);
     let module V = Verify in
+    let module I = Instance in
     let sd =
       match g.status with
       | Open _ -> D.bold @@ D.s "Goal is open"
@@ -325,13 +341,22 @@ module Report = struct
               (Term.Model.to_doc m)
         in
         (match result with
-        | V.V_proved { proof = p; _ } ->
+        | `Verify (V.V_proved { proof = p; _ }) ->
           D.v_block [ D.bold @@ D.s "Proved"; mkproof p ]
-        | V.V_proved_upto { upto; _ } ->
+        | `Verify (V.V_proved_upto { upto; _ }) ->
           D.bold @@ D.s_f "Proved up to %a" Event.pp_upto upto
-        | V.V_refuted { proof = p; model; _ } ->
+        | `Verify (V.V_refuted { proof = p; model; _ }) ->
           D.v_block [ D.bold @@ D.s "Refuted"; mk_model model; mkproof p ]
-        | V.V_unknown { proof = p; _ } ->
+        | `Verify (V.V_unknown { proof = p; _ }) ->
+          D.v_block [ D.bold @@ D.s "Unknown"; mkproof p ]
+        | `Instance (I.I_sat { proof = p; model; _ }) ->
+          D.v_block
+            [ D.bold @@ D.s "Instance exists"; mk_model model; mkproof p ]
+        | `Instance (I.I_unsat_upto { upto; _ }) ->
+          D.bold @@ D.s_f "Instance doesn't exist up to %a" Event.pp_upto upto
+        | `Instance (I.I_unsat { proof = p; _ }) ->
+          D.v_block [ D.bold @@ D.s "Instance doesn't exist"; mkproof p ]
+        | `Instance (I.I_unknown { proof = p; _ }) ->
           D.v_block [ D.bold @@ D.s "Unknown"; mkproof p ])
     in
     D.record
@@ -364,8 +389,22 @@ module Report = struct
       CCList.count
         (fun (_, g) ->
           match g.status, g.expected with
-          | Closed { result = Verify.V_proved _; _ }, True -> true
-          | Closed { result = Verify.V_refuted _; _ }, False -> true
+          | ( Closed
+                {
+                  result =
+                    `Verify (Verify.V_proved _) | `Instance (Instance.I_sat _);
+                  _;
+                },
+              True )
+          | ( Closed
+                {
+                  result =
+                    ( `Verify (Verify.V_refuted _)
+                    | `Instance (Instance.I_unsat _) );
+                  _;
+                },
+              False ) ->
+            true
           | _ -> false)
         closed
     in

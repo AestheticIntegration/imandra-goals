@@ -16,11 +16,26 @@ let result_of_verify_result ~(expected : expected) (verify_result : Verify.t) =
       (CCFormat.of_to_string expected_to_string)
       expected Top_result.pp_view (Top_result.Verify verify_result)
 
+let result_of_instance_result ~(expected : expected)
+    (instance_result : Instance.t) =
+  match expected, instance_result with
+  | True, Instance.I_sat _
+  | False, (Instance.I_unsat _ | Instance.I_unsat_upto _)
+  | Unknown, Instance.I_unknown _ ->
+    ()
+  | _ ->
+    Alcotest.failf "Expected %a, but got@ %a"
+      (CCFormat.of_to_string expected_to_string)
+      expected Top_result.pp_view (Top_result.Instance instance_result)
+
 let result_of_status (g : t) : unit =
   match g.status with
   | Open _ -> Alcotest.failf "Goal still open after close_goal"
   | Error s -> Alcotest.fail s
-  | Closed { result; _ } -> result_of_verify_result ~expected:g.expected result
+  | Closed { result = `Verify v; _ } ->
+    result_of_verify_result ~expected:g.expected v
+  | Closed { result = `Instance i; _ } ->
+    result_of_instance_result ~expected:g.expected i
 
 let test_of_goal (_g_id, (g : t)) =
   Alcotest.test_case g.name `Quick (fun () ->
@@ -33,8 +48,8 @@ let section_tests goals =
     List.fast_sort cmp goals
   in
   CCList.head_opt goals
-  |> CCOpt.map (fun (_id, (g : t)) ->
-         ( g.section |> CCOpt.get_or ~default:"Global",
+  |> CCOption.map (fun (_id, (g : t)) ->
+         ( g.section |> CCOption.get_or ~default:"Global",
            CCList.map test_of_goal goals ))
 
 let tests_of_goals goals =

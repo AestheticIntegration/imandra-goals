@@ -7,17 +7,22 @@ type t = {
   owner: owner option;
   status: status;
   expected: expected;
+  mode: mode;
   idx: int;
   hints: Imandra_surface.Uid.t Imandra_surface.Hints.t option;
   upto: Imandra_syntax.Logic_ast.upto option;
 }
+
+and mode =
+  | For_all
+  | Exists
 
 and status =
   | Open of { assigned_to: owner option }
   | Closed of {
       timestamp: float;
       duration: float;
-      result: Verify.t;
+      result: [ `Verify of Verify.t | `Instance of Instance.t ];
     }
   | Error of string
 
@@ -37,6 +42,7 @@ val init :
   ?section:string ->
   ?owner:owner ->
   ?expected:expected ->
+  ?mode:mode ->
   ?hints:Imandra_surface.Uid.t Imandra_surface.Hints.t ->
   ?upto:Imandra_syntax.Logic_ast.upto ->
   desc:string ->
