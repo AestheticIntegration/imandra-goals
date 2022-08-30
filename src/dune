@@ -2,23 +2,25 @@
  (name imandra_goals)
  (public_name imandra-goals)
  (libraries containers imandra-base.interactive tyxml tyxml.functor
-            imandra-document.tyxml imandra-document imandra-syntax
-            imandra-surface imandra-util ppx_deriving.runtime)
+   imandra-document.tyxml imandra-document imandra-syntax imandra-surface
+   imandra-util ppx_deriving.runtime)
  (modes byte)
  (flags
-  (:standard -w +a-4-29-42-44-48-50-58-32-60@8 -safe-string
-             -open Imandra_interactive -open Imandra_surface -open Imandra_util)))
+  (:standard -w +a-4-29-42-44-48-50-58-32-60@8 -safe-string -open
+    Imandra_interactive -open Imandra_surface -open Imandra_util)))
 
 (rule
-  (targets imandra_goals_consts_.ml)
-  (deps (:css imandra.css) (:logo imandra-logo.svg))
-  (action
-    (with-stdout-to %{targets}
-      (progn
-        (echo "let css = {mycss|")
-        (run cat %{css})
-        (echo "|mycss}")
-        (echo "let logo = {mysvg|")
-        (run cat %{logo})
-        (echo "|mysvg}")
-        ))))
+ (targets imandra_goals_consts_.ml)
+ (deps
+  (:css imandra.css)
+  (:logo imandra-logo.svg))
+ (action
+  (with-stdout-to
+   %{targets}
+   (progn
+    (echo "let css = {mycss|")
+    (run cat %{css})
+    (echo "|mycss}")
+    (echo "let logo = {mysvg|")
+    (run cat %{logo})
+    (echo "|mysvg}")))))
