@@ -3,7 +3,7 @@
  (public_name imandra-goals)
  (libraries containers imandra-base.interactive tyxml tyxml.functor
             imandra-document.tyxml imandra-document imandra-syntax
-            imandra-surface imandra-util)
+            imandra-surface imandra-util ppx_deriving.runtime)
  (modes byte)
  (flags
   (:standard -w +a-4-29-42-44-48-50-58-32-60@8 -safe-string
