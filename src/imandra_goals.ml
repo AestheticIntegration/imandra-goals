@@ -160,9 +160,10 @@ let close_goal ?hints g =
     let g = { g with status } in
     finalise g
   with e ->
+    let bt = Printexc.get_raw_backtrace () in
     let s =
       CCFormat.sprintf "Verification error: (%a) is %s undefined?"
-        (Imandra_syntax.Util_io.pp_exn ?input:None)
+        (Imandra_syntax.Util_err.pp_exn ~bt ?input:None)
         e g.name
     in
     let g = { g with status = Error s } in
