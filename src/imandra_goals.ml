@@ -13,6 +13,7 @@ type t = {
   mode: mode;
   idx: int;
   hints: Imandra_surface.Uid.t Imandra_surface.Hints.t option;
+  model_candidates: string list;
   upto: Imandra_syntax.Logic_ast.upto option;
 }
 
@@ -114,7 +115,7 @@ module Section = struct
 end
 
 let init ?section ?owner ?(expected = Unknown) ?(mode = For_all) ?hints ?upto
-    ~desc ~name () : unit =
+    ?(model_candidates = []) ~desc ~name () : unit =
   let g =
     {
       name;
@@ -128,6 +129,7 @@ let init ?section ?owner ?(expected = Unknown) ?(mode = For_all) ?hints ?upto
       expected;
       mode;
       idx = State.(!state.max_idx);
+      model_candidates;
       hints;
       upto;
     }
