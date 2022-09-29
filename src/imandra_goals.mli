@@ -10,7 +10,7 @@ type t = {
   mode: mode;
   idx: int;
   hints: Imandra_surface.Uid.t Imandra_surface.Hints.t option;
-  cache_modules: string list;
+  model_candidates: string list;
   upto: Imandra_syntax.Logic_ast.upto option;
 }
 
@@ -46,7 +46,7 @@ val init :
   ?mode:mode ->
   ?hints:Imandra_surface.Uid.t Imandra_surface.Hints.t ->
   ?upto:Imandra_syntax.Logic_ast.upto ->
-  ?cache_modules:string list ->
+  ?model_candidates:string list ->
   desc:string ->
   name:string ->
   unit ->
