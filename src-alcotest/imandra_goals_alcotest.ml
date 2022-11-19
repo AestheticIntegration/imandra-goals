@@ -1,4 +1,4 @@
-open Imandra_goals
+open Imandra_goals [@@warning "-45"]
 
 let expected_to_string : expected -> string = function
   | True -> "True"
