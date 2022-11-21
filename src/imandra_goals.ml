@@ -12,7 +12,7 @@ type t = {
   expected: expected;
   mode: mode;
   idx: int;
-  hints: Imandra_surface.Uid.t Imandra_surface.Hints.t option;
+  hints: (unit -> Imandra_surface.Uid.t Imandra_surface.Hints.t) option;
   model_candidates: string list;
   upto: Imandra_syntax.Logic_ast.upto option;
 }
@@ -148,7 +148,7 @@ let close_goal ?hints g =
   in
   let hints =
     match hints with
-    | None -> g.hints
+    | None -> g.hints |> CCOption.map (fun mk -> mk ())
     | Some _ -> hints
   in
   try

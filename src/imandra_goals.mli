@@ -9,7 +9,7 @@ type t = {
   expected: expected;
   mode: mode;
   idx: int;
-  hints: Imandra_surface.Uid.t Imandra_surface.Hints.t option;
+  hints: (unit -> Imandra_surface.Uid.t Imandra_surface.Hints.t) option;
   model_candidates: string list;
   upto: Imandra_syntax.Logic_ast.upto option;
 }
@@ -44,7 +44,7 @@ val init :
   ?owner:owner ->
   ?expected:expected ->
   ?mode:mode ->
-  ?hints:Imandra_surface.Uid.t Imandra_surface.Hints.t ->
+  ?hints:(unit -> Imandra_surface.Uid.t Imandra_surface.Hints.t) ->
   ?upto:Imandra_syntax.Logic_ast.upto ->
   ?model_candidates:string list ->
   desc:string ->
