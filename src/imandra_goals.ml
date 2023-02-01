@@ -3,6 +3,8 @@
 module D = Imandra_document.Document
 open Printf
 
+let ( let@ ) = ( @@ )
+
 type t = {
   name: string;
   section: string option;
@@ -11,6 +13,7 @@ type t = {
   status: status;
   expected: expected;
   mode: mode;
+  logic_config_ops: Logic_config.op list;
   idx: int;
   hints: (unit -> Imandra_surface.Uid.t Imandra_surface.Hints.t) option;
   model_candidates: string list;
@@ -114,8 +117,9 @@ module Section = struct
     | Some s -> s
 end
 
-let init ?section ?owner ?(expected = Unknown) ?(mode = For_all) ?hints ?upto
-    ?(model_candidates = []) ~desc ~name () : unit =
+let init ?section ?owner ?(expected = Unknown) ?(mode = For_all) ?hints
+    ?(logic_config_ops = []) ?upto ?(model_candidates = []) ~desc ~name () :
+    unit =
   let g =
     {
       name;
@@ -128,6 +132,7 @@ let init ?section ?owner ?(expected = Unknown) ?(mode = For_all) ?hints ?upto
       status = Open { assigned_to = owner };
       expected;
       mode;
+      logic_config_ops;
       idx = State.(!state.max_idx);
       model_candidates;
       hints;
@@ -148,14 +153,20 @@ let close_goal ?hints g =
   in
   let hints =
     match hints with
-    | None -> g.hints |> CCOption.map (fun mk -> mk ())
-    | Some _ -> hints
+    | None ->
+      g.hints
+      |> CCOption.map (fun mk -> mk ())
+      |> CCOption.get_or ~default:Hints.default
+    | Some h -> h
   in
+
+  let hints = Hints.set_logic_config_ops g.logic_config_ops hints in
+
   try
     let r =
       match g.mode with
-      | For_all -> `Verify (Verify.top ?hints ?upto:g.upto g.name)
-      | Exists -> `Instance (Instance.top ?hints ?upto:g.upto g.name)
+      | For_all -> `Verify (Verify.top ~hints ?upto:g.upto g.name)
+      | Exists -> `Instance (Instance.top ~hints ?upto:g.upto g.name)
     in
     let duration = Unix.gettimeofday () -. timestamp in
     let status = Closed { timestamp; duration; result = r } in

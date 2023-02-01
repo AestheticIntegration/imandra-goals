@@ -8,6 +8,7 @@ type t = {
   status: status;
   expected: expected;
   mode: mode;
+  logic_config_ops: Logic_config.op list;
   idx: int;
   hints: (unit -> Imandra_surface.Uid.t Imandra_surface.Hints.t) option;
   model_candidates: string list;
@@ -45,6 +46,7 @@ val init :
   ?expected:expected ->
   ?mode:mode ->
   ?hints:(unit -> Imandra_surface.Uid.t Imandra_surface.Hints.t) ->
+  ?logic_config_ops:Logic_config.op list ->
   ?upto:Imandra_syntax.Logic_ast.upto ->
   ?model_candidates:string list ->
   desc:string ->
