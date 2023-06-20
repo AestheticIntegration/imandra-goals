@@ -114,28 +114,36 @@ module Section = struct
     | Some s -> s
 end
 
-let init ?section ?owner ?(expected = Unknown) ?(mode = For_all) ?hints ?upto
-    ?(model_candidates = []) ~desc ~name () : unit =
-  let g =
-    {
-      name;
-      section =
-        (match section with
-        | None -> !State.state.State.section
-        | x -> x);
-      desc;
-      owner;
-      status = Open { assigned_to = owner };
-      expected;
-      mode;
-      idx = State.(!state.max_idx);
-      model_candidates;
-      hints;
-      upto;
-    }
-  in
+let make ?section ?owner ?(expected = Unknown) ?(mode = For_all) ?hints ?upto
+    ?(model_candidates = []) ~desc ~name () : t =
+  {
+    name;
+    section =
+      (match section with
+      | None -> !State.state.State.section
+      | x -> x);
+    desc;
+    owner;
+    status = Open { assigned_to = owner };
+    expected;
+    mode;
+    idx = State.(!state.max_idx);
+    model_candidates;
+    hints;
+    upto;
+  }
+
+let install (g : t) : unit =
   State.(install g);
   State.(Set.focus (Some g))
+
+let init ?section ?owner ?expected ?mode ?hints ?upto ?model_candidates ~desc
+    ~name () : unit =
+  let g =
+    make ?section ?owner ?expected ?mode ?hints ?upto ?model_candidates ~desc
+      ~name ()
+  in
+  install g
 
 let focus () = State.(!state.focus)
 
