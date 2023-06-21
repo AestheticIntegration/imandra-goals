@@ -39,6 +39,23 @@ and id = string * string option
 
 type goal = t
 
+val make :
+  ?section:string ->
+  ?owner:owner ->
+  ?expected:expected ->
+  ?mode:mode ->
+  ?hints:(unit -> Imandra_surface.Uid.t Imandra_surface.Hints.t) ->
+  ?upto:Imandra_syntax.Logic_ast.upto ->
+  ?model_candidates:string list ->
+  desc:string ->
+  name:string ->
+  unit ->
+  t
+(** Create a goal *)
+
+val install : t -> unit
+(** Install a goal and set focus *)
+
 val init :
   ?section:string ->
   ?owner:owner ->
@@ -51,7 +68,7 @@ val init :
   name:string ->
   unit ->
   unit
-(** Start a new goal *)
+(** Create and install a goal (Equivalent to [make] followed by [install]). *)
 
 val close_goal : ?hints:Imandra_surface.Uid.t Imandra_surface.Hints.t -> t -> t
 
