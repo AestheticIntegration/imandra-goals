@@ -16,6 +16,7 @@
  (depends
   (dune (>= 2.5))
   containers
+  decoders
   imandra-document
   imandra-base
   imandra-surface
