@@ -634,4 +634,7 @@ module Encode (E : Decoders.Encode.S) = struct
         (* model_candidates *)
         opt "upto" upto t.upto;
       ]
+
+  let goals (gs : (id * t) list) : value =
+    obj (gs |> CCList.map (fun ((name, _section), g) -> (name, t g)))
 end

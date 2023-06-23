@@ -29,4 +29,5 @@
   (dune (>= 2.5))
    alcotest
    containers
+   decoders-yojson
    imandra-goals))
