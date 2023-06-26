@@ -96,5 +96,6 @@ val report : ?custom_css:string -> ?compressed:bool -> string -> unit
 
 module Encode (E : Decoders.Encode.S) : sig
   val t : t E.encoder
+
   val goals : (id * t) list E.encoder
 end

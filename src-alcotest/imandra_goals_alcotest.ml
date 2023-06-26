@@ -85,7 +85,7 @@ let run_tests ?report_name ?json_fname () =
         let module E : Decoders.Encode.S = Decoders_yojson.Basic.Encode in
         let module Encode = Imandra_goals.Encode (E) in
         let goals = Imandra_goals.all () in
-        let json_str = E.encode_string (Encode.goals) goals in
+        let json_str = E.encode_string Encode.goals goals in
         CCIO.with_out json_fname (fun oc -> output_string oc json_str)
       in
       at_exit write_report
