@@ -93,3 +93,9 @@ val imandra_custom_css : string
 
 val report : ?custom_css:string -> ?compressed:bool -> string -> unit
 (** Write report to given filename *)
+
+module Encode (E : Decoders.Encode.S) : sig
+  val t : t E.encoder
+
+  val goals : (id * t) list E.encoder
+end

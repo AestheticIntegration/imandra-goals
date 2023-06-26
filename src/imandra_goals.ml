@@ -44,6 +44,30 @@ type goal = t
 
 let id_of_goal (g : t) = g.name, g.section
 
+let expected_to_string (e : expected) : string =
+  match e with
+  | True -> "true"
+  | False -> "false"
+  | Unknown -> "unknown"
+
+let expected_of_string (s : string) : expected option =
+  match s with
+  | "true" -> Some True
+  | "false" -> Some False
+  | "unknown" -> Some Unknown
+  | _ -> None
+
+let mode_to_string (m : mode) : string =
+  match m with
+  | For_all -> "for_all"
+  | Exists -> "exists"
+
+let mode_of_string (s : string) : mode option =
+  match s with
+  | "for_all" -> Some For_all
+  | "exists" -> Some Exists
+  | _ -> None
+
 module State = struct
   type t = {
     goals: (id, goal) Hashtbl.t;
@@ -534,3 +558,135 @@ end
 
 let report ?(custom_css = imandra_custom_css) ?(compressed = false) filename =
   Report.top ~custom_css ~compressed ~filename ()
+
+module Encode (E : Decoders.Encode.S) = struct
+  [@@@warning "-40"]
+
+  open E
+  module Document_encode = Imandra_document_json.Encode (E)
+
+  let obj_opt kvs =
+    kvs
+    |> CCList.filter_map (fun (k, v) -> v |> CCOption.map (fun v -> k, v))
+    |> obj
+
+  let req k enc v = k, Some (enc v)
+
+  let opt k enc v = k, CCOption.map enc v
+
+  let upto (upto : Imandra_syntax.Logic_ast.upto) : value =
+    match upto with
+    | Upto_steps i -> list value [ string "steps"; int i ]
+    | Upto_bound i -> list value [ string "bound"; int i ]
+
+  let result_verify (v : Verify.t) : value =
+    let kvs =
+      match v with
+      | V_proved { proof; proof_graph; callgraph = _ } ->
+        [
+          req "v" string "proved";
+          opt "proof" Document_encode.t proof;
+          opt "proof_graph" string proof_graph;
+        ]
+      | V_proved_upto { upto = upto'; callgraph = _ } ->
+        [ req "v" string "proved_upto"; req "upto" upto upto' ]
+      | V_refuted
+          {
+            model_str_ocaml;
+            model_str_pretty;
+            model = _;
+            model_reflect = _;
+            callgraph = _;
+            proof;
+          } ->
+        [
+          req "v" string "refuted";
+          req "model_str_ocaml" string model_str_ocaml;
+          req "model_str_pretty" string model_str_pretty;
+          opt "proof" Document_encode.t proof;
+        ]
+      | V_unknown { callgraph = _; instances; proof; reason; checkpoints = _ }
+        ->
+        [
+          req "v" string "unknown";
+          opt "instances" Document_encode.t instances;
+          opt "proof" Document_encode.t proof;
+          req "reason" string reason;
+        ]
+    in
+    obj_opt (req "ty" string "verify" :: kvs)
+
+  let result_instance (i : Instance.t) : value =
+    let kvs =
+      match i with
+      | I_unsat { proof; proof_graph; callgraph = _ } ->
+        [
+          req "i" string "unsat";
+          opt "proof" Document_encode.t proof;
+          opt "proof_graph" string proof_graph;
+        ]
+      | I_unsat_upto { upto = upto'; callgraph = _ } ->
+        [ req "i" string "unsat_upto"; req "upto" upto upto' ]
+      | I_sat
+          {
+            model_str_ocaml;
+            model_str_pretty;
+            model = _;
+            model_reflect = _;
+            callgraph = _;
+            proof;
+          } ->
+        [
+          req "i" string "sat";
+          req "model_str_ocaml" string model_str_ocaml;
+          req "model_str_pretty" string model_str_pretty;
+          opt "proof" Document_encode.t proof;
+        ]
+      | I_unknown { callgraph = _; instances; proof; reason } ->
+        [
+          req "i" string "unknown";
+          opt "instances" Document_encode.t instances;
+          opt "proof" Document_encode.t proof;
+          req "reason" string reason;
+        ]
+    in
+    obj_opt (req "ty" string "instance" :: kvs)
+
+  let result (r : [ `Verify of Verify.t | `Instance of Instance.t ]) : value =
+    match r with
+    | `Verify v -> result_verify v
+    | `Instance i -> result_instance i
+
+  let status (s : status) : value =
+    obj_opt
+      (match s with
+      | Open { assigned_to } ->
+        [ req "ty" string "open"; opt "assigned_to" string assigned_to ]
+      | Closed { timestamp; duration; result = result' } ->
+        [
+          req "ty" string "closed";
+          req "timestamp" float timestamp;
+          req "duration" float duration;
+          req "result" result result';
+        ]
+      | Error msg -> [ req "ty" string "error"; req "msg" string msg ])
+
+  let t (t : t) : value =
+    obj_opt
+      [
+        req "name" string t.name;
+        opt "section" string t.section;
+        req "desc" string t.desc;
+        opt "owner" string t.owner;
+        req "status" status t.status;
+        req "expected" (of_to_string expected_to_string) t.expected;
+        req "mode" (of_to_string mode_to_string) t.mode;
+        req "idx" int t.idx;
+        (* hints *)
+        (* model_candidates *)
+        opt "upto" upto t.upto;
+      ]
+
+  let goals (gs : (id * t) list) : value =
+    obj (gs |> CCList.map (fun ((name, _section), g) -> name, t g))
+end

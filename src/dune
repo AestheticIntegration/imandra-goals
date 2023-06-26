@@ -1,9 +1,9 @@
 (library
  (name imandra_goals)
  (public_name imandra-goals)
- (libraries containers imandra-base.interactive tyxml tyxml.functor
-   imandra-document.tyxml imandra-document imandra-syntax imandra-surface
-   imandra-util ppx_deriving.runtime)
+ (libraries containers decoders imandra-base.interactive tyxml tyxml.functor
+   imandra-document.tyxml imandra-document imandra-document.json
+   imandra-syntax imandra-surface imandra-util ppx_deriving.runtime)
  (modes byte)
  (flags
   (:standard -w +a-4-29-42-44-48-50-58-32-60@8 -safe-string -open

@@ -61,7 +61,7 @@ let tests_of_goals goals =
   in
   goal_sections |> CCList.filter_map section_tests
 
-let run_tests ?report_name () =
+let run_tests ?report_name ?json_fname () =
   let goals = all () in
   let tests = tests_of_goals goals in
   let () =
@@ -72,6 +72,21 @@ let run_tests ?report_name () =
         CCFormat.printf "Writing report to %s/%s.html@." (Sys.getcwd ())
           report_name;
         report report_name
+      in
+      at_exit write_report
+  in
+  let () =
+    match json_fname with
+    | None -> ()
+    | Some json_fname ->
+      let write_report () =
+        CCFormat.printf "Writing JSON to %s/%s.html@." (Sys.getcwd ())
+          json_fname;
+        let module E : Decoders.Encode.S = Decoders_yojson.Basic.Encode in
+        let module Encode = Imandra_goals.Encode (E) in
+        let goals = Imandra_goals.all () in
+        let json_str = E.encode_string Encode.goals goals in
+        CCIO.with_out json_fname (fun oc -> output_string oc json_str)
       in
       at_exit write_report
   in

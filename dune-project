@@ -16,6 +16,7 @@
  (depends
   (dune (>= 2.5))
   containers
+  decoders
   imandra-document
   imandra-base
   imandra-surface
@@ -28,4 +29,5 @@
   (dune (>= 2.5))
    alcotest
    containers
+   decoders-yojson
    imandra-goals))
