@@ -563,6 +563,7 @@ module Encode (E : Decoders.Encode.S) = struct
   [@@@warning "-40"]
 
   open E
+  module Document_encode = Imandra_document_json.Encode (E)
 
   let obj_opt kvs =
     kvs
@@ -581,22 +582,73 @@ module Encode (E : Decoders.Encode.S) = struct
   let result_verify (v : Verify.t) : value =
     let kvs =
       match v with
-      | V_proved _ -> [ req "v" string "proved" ]
-      | V_proved_upto u ->
-        [ req "v" string "proved_upto"; req "upto" upto u.upto ]
-      | V_refuted _ -> [ req "v" string "refuted" ]
-      | V_unknown _ -> [ req "v" string "unknown" ]
+      | V_proved { proof; proof_graph; callgraph = _ } ->
+        [
+          req "v" string "proved";
+          opt "proof" Document_encode.t proof;
+          opt "proof_graph" string proof_graph;
+        ]
+      | V_proved_upto { upto = upto'; callgraph = _ } ->
+        [ req "v" string "proved_upto"; req "upto" upto upto' ]
+      | V_refuted
+          {
+            model_str_ocaml;
+            model_str_pretty;
+            model = _;
+            model_reflect = _;
+            callgraph = _;
+            proof;
+          } ->
+        [
+          req "v" string "refuted";
+          req "model_str_ocaml" string model_str_ocaml;
+          req "model_str_pretty" string model_str_pretty;
+          opt "proof" Document_encode.t proof;
+        ]
+      | V_unknown { callgraph = _; instances; proof; reason; checkpoints = _ }
+        ->
+        [
+          req "v" string "unknown";
+          opt "instances" Document_encode.t instances;
+          opt "proof" Document_encode.t proof;
+          req "reason" string reason;
+        ]
     in
     obj_opt (req "ty" string "verify" :: kvs)
 
   let result_instance (i : Instance.t) : value =
     let kvs =
       match i with
-      | I_unsat _ -> [ req "v" string "unsat" ]
-      | I_unsat_upto u ->
-        [ req "v" string "unsat_upto"; req "upto" upto u.upto ]
-      | I_sat _ -> [ req "v" string "sat" ]
-      | I_unknown _ -> [ req "v" string "unknown" ]
+      | I_unsat { proof; proof_graph; callgraph = _ } ->
+        [
+          req "i" string "unsat";
+          opt "proof" Document_encode.t proof;
+          opt "proof_graph" string proof_graph;
+        ]
+      | I_unsat_upto { upto = upto'; callgraph = _ } ->
+        [ req "i" string "unsat_upto"; req "upto" upto upto' ]
+      | I_sat
+          {
+            model_str_ocaml;
+            model_str_pretty;
+            model = _;
+            model_reflect = _;
+            callgraph = _;
+            proof;
+          } ->
+        [
+          req "i" string "sat";
+          req "model_str_ocaml" string model_str_ocaml;
+          req "model_str_pretty" string model_str_pretty;
+          opt "proof" Document_encode.t proof;
+        ]
+      | I_unknown { callgraph = _; instances; proof; reason } ->
+        [
+          req "i" string "unknown";
+          opt "instances" Document_encode.t instances;
+          opt "proof" Document_encode.t proof;
+          req "reason" string reason;
+        ]
     in
     obj_opt (req "ty" string "instance" :: kvs)
 
@@ -636,5 +688,5 @@ module Encode (E : Decoders.Encode.S) = struct
       ]
 
   let goals (gs : (id * t) list) : value =
-    obj (gs |> CCList.map (fun ((name, _section), g) -> (name, t g)))
+    obj (gs |> CCList.map (fun ((name, _section), g) -> name, t g))
 end
